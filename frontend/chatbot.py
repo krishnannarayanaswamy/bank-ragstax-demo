@@ -1,8 +1,7 @@
 import streamlit as st
-import dotenv
 import langchain
-import json
 import os
+import cassio
 
 from cassandra.cluster import Session
 from cassandra.query import PreparedStatement
@@ -13,13 +12,17 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.callbacks import StreamlitCallbackHandler
 from langchain.schema import BaseRetriever, Document, SystemMessage
 
-from cassandra.cluster import Cluster, Session
-from cassandra.auth import PlainTextAuthProvider
+from cassio.config import check_resolve_session
 
 # Enable langchain debug mode
 langchain.debug = True
 
-dotenv.load_dotenv(dotenv.find_dotenv())
+cassio.init(
+    token=os.environ['ASTRA_DB_APPLICATION_TOKEN'],
+    database_id=os.environ['ASTRA_DB_ID'],
+    keyspace=os.environ.get('ASTRA_DB_KEYSPACE'),
+)
+
 
 # OpenAI model to use
 OPENAI_MODEL = os.getenv("OPENAI_MODEL") or "gpt-4"
@@ -60,37 +63,12 @@ class AstraProductRetriever(BaseRetriever):
         return docs
 
 
-def get_session(scb: str, secrets: str) -> Session:
-    """
-    Connect to Astra DB using secure connect bundle and credentials.
-
-    Parameters
-    ----------
-    scb : str
-        Path to secure connect bundle.
-    secrets : str
-        Path to credentials.
-    """
-
-    cloud_config = {
-        'secure_connect_bundle': scb
-    }
-
-    with open(secrets) as f:
-        secrets = json.load(f)
-
-    CLIENT_ID = secrets["clientId"]
-    CLIENT_SECRET = secrets["secret"]
-
-    auth_provider = PlainTextAuthProvider(CLIENT_ID, CLIENT_SECRET)
-    cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
-    return cluster.connect()
-
 
 @st.cache_resource
 def create_chatbot(model="gpt-4"):
-    session = get_session(scb='./frontend/config/secure-connect-multilingual.zip',
-                          secrets='./frontend/config/krishnan.narayanaswamy@datastax.com-token.json')
+    #session = get_session(scb='./frontend/config/secure-connect-multilingual.zip',
+    #                      secrets='./frontend/config/krishnan.narayanaswamy@datastax.com-token.json')
+    session=check_resolve_session(None)
     llm = ChatOpenAI(model=model, temperature=0, streaming=True)
     embedding = OpenAIEmbeddings()
     # Define tool to query products from Astra DB

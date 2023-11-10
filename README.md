@@ -23,14 +23,16 @@ export S3_ACCESS_KEY=
 export S3_SECRET=
 export S3_REGION=
 
-langstream apps deploy ragstax-astra-demo -app app -i instances/astra.yaml -s secrets/secrets.yaml
+ragstack apps deploy ragstax-astra-demo -app app -i instances/astra.yaml -s secrets/secrets.yaml
 
 Review logs using
 
-langstream apps logs ragstax-astra-demo
+ragstack apps logs ragstax-astra-demo
 
 Review and Change the code in frontend/chatbot.py based on your config files, keyspace and table names.
 
-export OPENAI_API_KEY='with your key'
+export ASTRA_DB_APPLICATION_TOKEN=""
+export ASTRA_DB_ID=""
+export ASTRA_DB_KEYSPACE=""
 
 streamlit run frontend/chatbot.py
